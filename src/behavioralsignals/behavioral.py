@@ -1,3 +1,4 @@
+import time
 from typing import Literal, Iterator, Optional
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from .models import (
 )
 from .generated import api_pb2 as pb
 from .generated import api_pb2_grpc as pb_grpc
+from .streams import AudioStream
 
 
 class Behavioral(BaseClient):
@@ -165,8 +167,10 @@ class Behavioral(BaseClient):
         return ResultResponse(**data)
 
     def stream_audio(
-        self, audio_stream: Iterator[bytes], options: StreamingOptions
+        self, audio_stream: AudioStream, options: StreamingOptions
     ) -> Iterator[ResultResponse]:
+        send_data_ns = {}
+
         with self._get_channel_context() as channel:
             stub = pb_grpc.BehavioralStreamingApiStub(channel)
 
@@ -181,15 +185,19 @@ class Behavioral(BaseClient):
                 )
                 yield req
 
+                msg_id = 0
                 for chunk in audio_stream:
                     yield pb.AudioStream(
                         cid=int(self.config.cid),
                         x_auth_token=self.config.api_key,
                         audio_content=chunk,
                     )
+                    send_data_ns[msg_id] = time.time_ns()
+                    msg_id += 1
 
             response_stream = stub.StreamAudio(_request_generator())
             for response in response_stream:
                 resp_dict = MessageToDict(response, always_print_fields_with_no_presence=True)
                 response_data = StreamingResultResponse(**resp_dict)
                 yield response_data
+

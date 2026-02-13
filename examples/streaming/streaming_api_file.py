@@ -1,11 +1,10 @@
-import os
 import json
 import argparse
 
 from dotenv import load_dotenv
 
 from behavioralsignals import Client, StreamingOptions
-from behavioralsignals.utils import make_audio_stream
+from behavioralsignals.utils import AudioFileStream, make_audio_stream
 
 
 def parse_args():
@@ -42,16 +41,19 @@ if __name__ == "__main__":
     load_dotenv()
     client = Client(cid=os.getenv("CID"), api_key=os.getenv("API_KEY"))
 
-    # Step 2. Read the audio file, and wrap it inside an iterator of chunks
-    audio_stream, sample_rate = make_audio_stream(file_path, chunk_size=0.25)
+    # Step 2. Read the audio file as an AudioStream
+    audio_stream: AudioFileStream = make_audio_stream(file_path, chunk_size=0.25, realtime_pacing=True)
     options = StreamingOptions(
-        sample_rate=sample_rate, encoding="LINEAR_PCM", level=args.response_level
+        sample_rate=audio_stream.sample_rate,
+        encoding="LINEAR_PCM",
+        level=args.response_level,
     )
 
     if args.api == "behavioral":
         responses = client.behavioral.stream_audio(audio_stream=audio_stream, options=options)
     else:
         responses = client.deepfakes.stream_audio(audio_stream=audio_stream, options=options)
+
 
     output_data = []
     for resp in responses:

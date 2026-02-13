@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.console import Console
 
 from behavioralsignals import Client, StreamingOptions
+from behavioralsignals.streams import IterableAudioStream
 
 
 SAMPLE_RATE = 16000  # Sample rate in Hz
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     threading.Thread(target=audio_capture, args=(chunks_queue,), daemon=True).start()
 
     # Step 3. Send the audio stream for processing
-    audio_stream = audio_stream_from_queue(chunks_queue)
+    audio_stream = IterableAudioStream(audio_stream_from_queue(chunks_queue), sample_rate=SAMPLE_RATE)
     options = StreamingOptions(
         sample_rate=SAMPLE_RATE, encoding="LINEAR_PCM", level=args.response_level
     )

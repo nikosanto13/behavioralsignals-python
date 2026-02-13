@@ -255,3 +255,6 @@ class StreamingResultResponse(BaseModel):
     results: Optional[List[ResultItem]] = Field(
         None, alias="result", description="List of result items"
     )
+    delay_ms: Optional[float] = Field(
+        None, alias="delayMs", description="Delay in milliseconds between receiving this message and the timestamp of the audio it corresponds to"
+    )
